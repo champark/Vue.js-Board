@@ -9,9 +9,24 @@
 </template>
 
 <script>
+import axios from "axios";
+
 export default {
   name: 'PostList',
   props: ['posts'],
+  methods: {
+    async fetchPosts() {
+      try {
+        const response = await axios.get('http://localhost:9000/api/posts');
+        this.$emit('update-posts', response.data); // Emit the fetched posts to the parent
+      } catch (error) {
+        console.error('Error fetching posts:', error);
+      }
+    },
+  },
+  mounted() {
+    this.fetchPosts(); // Call fetchPosts when the component is mounted
+  },
 };
 </script>
 
