@@ -7,6 +7,8 @@
 </template>
 
 <script>
+import axios from "axios";
+
 export default {
   name: 'PostForm',
   data() {
@@ -21,6 +23,16 @@ export default {
       this.title = '';
       this.content = '';
     },
+    //
+    async fetchPosts() {
+      try {
+        const response = await axios.get('http://localhost:8080/api/posts');
+        this.posts = response.data; // Assign the fetched posts to the Vue.js state
+      } catch (error) {
+        console.error('Error fetching posts:', error);
+      }
+    },
+    //
   },
 };
 </script>
