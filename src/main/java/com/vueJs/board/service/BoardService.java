@@ -31,10 +31,11 @@ public class BoardService {
     }
 
     // 업데이트
-    public Post updatePost(Long id, String newContent) {
-        Post memo = getPost(id);
-        memo.setContent(newContent);
-        return boardRepository.save(memo);
+    public Post updatePost(Long id, Post updatedPost) {
+        Post post = getPost(id);
+        post.setTitle(updatedPost.getTitle());
+        post.setContent(updatedPost.getContent());
+        return boardRepository.save(post);
     }
 
     // 삭제
