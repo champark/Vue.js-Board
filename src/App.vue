@@ -2,7 +2,8 @@
   <div id="app">
     <h1>Vue.js 게시판</h1>
     <PostForm @add-post="addPost" />
-    <PostList :posts="posts" @delete-post="deletePost" @update-posts="updatePosts" />
+    <hr class="divider" />
+    <PostList :posts="posts" @delete-post="deletePost" @edit-post="editPost" />
   </div>
 </template>
 
@@ -45,8 +46,20 @@ export default {
         console.error('Error deleting post:', error);
       }
     },
-    updatePosts(newPosts) {
-      this.posts = newPosts; // Update the posts array when receiving new data
+    async editPost(postId) {
+      const post = this.posts.find(post => post.id === postId);
+      if (post) {
+        const updatedContent = prompt('Edit the content:', post.content);
+        if (updatedContent !== null && updatedContent !== '') {
+          const updatedPost = { ...post, content: updatedContent };
+          try {
+            const response = await axios.put(`http://localhost:9000/api/posts/${postId}`, updatedPost);
+            Object.assign(post, response.data); // Update the local post
+          } catch (error) {
+            console.error('Error updating post:', error); // Log the error for debugging
+          }
+        }
+      }
     },
   },
   mounted() {
@@ -59,19 +72,44 @@ export default {
 form {
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: flex-start;
   gap: 10px;
   margin-bottom: 20px;
 }
 
 #app {
   font-family: Arial, sans-serif;
-  text-align: center;
+  text-align: left;
   margin: 20px;
 }
 
 h1 {
-  color: #2c3e50;
-  margin-bottom: 20px;
+  color: #ffffff;
+  background-color: #4CAF50;
+  padding: 15px 20px;
+  border-radius: 8px;
+  text-align: center;
+  font-weight: bold;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+  animation: fadeIn 1s ease-in-out; /* Fade-in animation */
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px); /* Slide in from the top */
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+
+.divider {
+  height: 1px;
+  background-color: #ddd;
+  border: none;
+  margin: 20px 0;
 }
 </style>
