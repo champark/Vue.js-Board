@@ -3,7 +3,21 @@
     <h1>Vue.js 게시판</h1>
     <PostForm @add-post="addPost" />
     <hr class="divider" />
-    <PostList :posts="posts" @delete-post="deletePost" @edit-post="editPost" />
+    <PostList
+        :posts="posts"
+        @edit-post="openModal"
+        @delete-post="deletePost"
+    />
+    <EditModal
+        v-if="isModalOpen"
+        :show="isModalOpen"
+        :title="'Edit Post Content'"
+        :defaultValue="modalContent"
+        @confirm="editPost"
+        @close="closeModal"
+    />
+    <div :class="['notification', { show: notification.show }]">{{ notification.message }}</div>
+
   </div>
 </template>
 
@@ -11,16 +25,44 @@
 import PostForm from './components/PostForm.vue';
 import PostList from './components/PostList.vue';
 import axios from 'axios';
+import EditModal from "@/components/EditModal";
 
 export default {
   name: 'App',
-  components: { PostForm, PostList },
+  components: {EditModal, PostForm, PostList },
   data() {
     return {
+      isModalOpen: false, // Define the property and set the initial value
+      modalPostId: null,
+      modalContent: "",
       posts: [],
+      notification: {
+        show: false,
+        message: "",
+      },
     };
   },
   methods: {
+    showNotification(message) {
+      this.notification.message = message;
+      this.notification.show = true;
+
+      // Hide the notification after 3 seconds
+      setTimeout(() => {
+        this.notification.show = false;
+      }, 3000);
+    },
+    openModal(postId) {
+      const post = this.posts.find((p) => p.id === postId);
+      if (post) {
+        this.modalPostId = postId;
+        this.modalContent = post.content;
+        this.isModalOpen = true;
+      }
+    },
+    closeModal() {
+      this.isModalOpen = false;
+    },
     async fetchPosts() {
       try {
         const response = await axios.get('http://localhost:9000/api/posts');
@@ -46,20 +88,27 @@ export default {
         console.error('Error deleting post:', error);
       }
     },
-    async editPost(postId) {
-      const post = this.posts.find(post => post.id === postId);
+    async editPost(newContent) {
+      const post = this.posts.find((p) => p.id === this.modalPostId);
       if (post) {
-        const updatedContent = prompt('Edit the content:', post.content);
-        if (updatedContent !== null && updatedContent !== '') {
-          const updatedPost = { ...post, content: updatedContent };
-          try {
-            const response = await axios.put(`http://localhost:9000/api/posts/${postId}`, updatedPost);
-            Object.assign(post, response.data); // Update the local post
-          } catch (error) {
-            console.error('Error updating post:', error); // Log the error for debugging
-          }
+        try {
+          // Send the updated content to the backend
+          await axios.put(`http://localhost:9000/api/posts/${post.id}`, {
+            title: post.title, // Keep the title unchanged
+            content: newContent, // Update the content
+          });
+
+          // Update the local post content after a successful request
+          post.content = newContent;
+
+          // Show a success notification
+          this.showNotification("글 수정을 성공했습니다");
+        } catch (error) {
+          console.error("Error updating post:", error);
+          this.showNotification("Failed to update the post. Please try again.");
         }
       }
+      this.closeModal();
     },
   },
   mounted() {
@@ -105,11 +154,30 @@ h1 {
   }
 }
 
-
 .divider {
   height: 1px;
   background-color: #ddd;
   border: none;
   margin: 20px 0;
 }
+
+.notification {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background-color: #4caf50;
+  color: white;
+  padding: 10px 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+  opacity: 0;
+  transform: translateY(-20px);
+  transition: opacity 0.5s ease, transform 0.5s ease;
+}
+
+.notification.show {
+  opacity: 1;
+  transform: translateY(0);
+}
+
 </style>
